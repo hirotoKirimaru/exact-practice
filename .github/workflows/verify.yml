@@ -1,0 +1,47 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  web:
+    # Exact の Web ホストは Linux で検証できる（ネイティブ: macOS / iOS は Mac が必要）
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      EXACT_FEEDBACK: "0"
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      # target/ は 10 GB を超えるためキャッシュしない（コンパイラのビルドは毎回 3 分前後）
+      - name: Cache toolchains
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.rustup/toolchains
+            ~/.cargo/bin
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            ~/.cache/exact/binaryen
+            ~/.cache/ms-playwright
+          key: exact-tools-${{ runner.os }}-${{ hashFiles('EXACT_REV') }}
+          restore-keys: exact-tools-${{ runner.os }}-
+
+      - name: Bootstrap expo/exact
+        run: scripts/bootstrap.sh
+
+      - name: Verify apps (web)
+        run: scripts/verify.sh

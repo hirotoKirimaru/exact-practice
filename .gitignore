@@ -1,0 +1,9 @@
+# expo/exact のチェックアウト（scripts/bootstrap.sh が EXACT_REV の版を取得する）
+/vendor/exact/
+
+# Exact がアプリ内に作る作業領域・生成物
+.exact/
+node_modules/
+target/
+
+.DS_Store
